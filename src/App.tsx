@@ -1,4 +1,4 @@
-import Tetris from "./learning/Tetris";
+import Tetris from "./components/Tetris";
 
 function App() {
   return (

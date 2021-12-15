@@ -1,114 +1,113 @@
-import { useState } from "react";
+// Styled components
+import { TetrisWrapper, StyledTetris } from "./styled/StyledTetris";
 
-import { createStage, checkCollision } from "../gameHelper";
-
-// Components 
-import Stage from "./Stage";
+// Components
 import Display from "./Display";
 import StartButton from "./StartButton";
-import { StyledTetris, StyledTetrisWrapper } from "./styledComponents/StyledTetris";
+import Stage from "./Stage";
 
 // Hooks
-import usePlayer from "../hooks/usePlayer";
-import useStage from "../hooks/useStage";
-import { useInterval } from "../hooks/useInterval";
-import { useGameStatus } from "../hooks/useGameStatus";
+import { useTetromino } from "./hooks/useTetromino";
+import { useStage } from "./hooks/useStage";
+import { useInterval } from "./hooks/useInterval";
+import { useGameStatus } from "./hooks/useGameStatus";
+
+// Util functions
+import { checkCollision, createStage } from "./gameHelpers";
+import { useState } from "react";
 
 const Tetris = () => {
-    const [dropTime, setDropTime] = useState<null | number>(null);
-    const [isGameOver, setGameOver] = useState(false);
-    const { player, resetPlayer, updatePlayerPos, playerRotate } = usePlayer();
-    const { stage, setStage, rowsCleared } = useStage(player, resetPlayer);
-    const { score, setLevel, setRows, setScore, rows, level } = useGameStatus(rowsCleared);
-    
-    const drop = () => {
-        if (rows > (level + 1) * 10) {
-            setLevel(prev => prev + 1);
-            setDropTime(1000 / (level + 1) + 200);
-        }
+  const { tetromino, resetTetromino, updatePosTetromino, rotateTetromino } =
+    useTetromino();
+  const { stage, setStage, clearedRows } = useStage({
+    tetromino,
+    resetTetromino,
+  });
+  const [dropTime, setDropTime] = useState<null | number>(1000);
+  const [isGameOver, setGameOver] = useState(false);
+  const { gameStatus, addRows, addScore, increaseLevel, resetGameStatus } =
+    useGameStatus(clearedRows);
 
-        if (!checkCollision(player, stage, { x: 0, y: 1 })) {
-            updatePlayerPos({ x: 0, y: 1, collided: false });
-        } else {
-            if (player.pos.y < 1) {
-                setGameOver(true);
-                setDropTime(null);
-            }
-            updatePlayerPos({ x: 0, y: 0, collided: true });
-        }
+  const handleKeyUp = ({ key }: React.KeyboardEvent<HTMLDivElement>) => {
+    if (key === "ArrowDown") {
+      setDropTime(1000);
     }
+  };
 
-    const keyUp = ({ key }: React.KeyboardEvent<HTMLDivElement>) => {
-        if (!isGameOver) {
-            if (key === "ArrowDown") {
-                setDropTime(1000);
-            }
-        }
-    };
-
-    const dropPlayer = () => {
+  const keyController = ({ key }: React.KeyboardEvent<HTMLDivElement>) => {
+    if (isGameOver) return;
+    switch (key) {
+      case "ArrowDown":
+        dropTetromino(1);
         setDropTime(null);
-        drop();
+        break;
+      case "ArrowUp":
+        rotateTetromino(stage);
+        break;
+      case "ArrowLeft":
+        moveTetromino(-1, 0);
+        break;
+      case "ArrowRight":
+        moveTetromino(1, 0);
+        break;
     }
+  };
 
-    const startGame = () => {
-        setStage(createStage());
-        setDropTime(1000);
-        resetPlayer();
-        setGameOver(false);
-        setScore(0);
-        setLevel(0);
-        setRows(0);
+  const moveTetromino = (x: number, y: number, collided = false) => {
+    if (!checkCollision(stage, tetromino, { x, y })) {
+      updatePosTetromino(x, y, collided);
     }
+  };
 
-    const movePlayer = (dir: number) => {
-        if (!checkCollision(player, stage, { x: dir, y: 0 })) {
-            updatePlayerPos({ x: dir, y: 0 });
-        }
+  const dropTetromino = (y: number, collided = false) => {
+    if (!checkCollision(stage, tetromino, { x: 0, y })) {
+      updatePosTetromino(0, y, collided);
+    } else {
+      if (tetromino.pos.y < 1) {
+        setGameOver(true);
+      }
+      updatePosTetromino(0, 0, true);
+      console.log(50 * gameStatus.level);
+      setDropTime((prev) => prev! - 50 * gameStatus.level);
     }
+  };
 
-    const move = ({ key }: React.KeyboardEvent<HTMLDivElement>) => {
-        if (!isGameOver) {
-            if (key === "ArrowLeft") {
-                movePlayer(-1);
-            } else if (key === "ArrowRight") {
-                movePlayer(1);
-            } else if (key === "ArrowDown") {
-                dropPlayer();
-            } else if (key === "ArrowUp") {
-                playerRotate(stage, 1);
-            }
-        }
-    }
+  const startGame = () => {
+    setGameOver(false);
+    setStage(createStage());
+    resetGameStatus();
+    resetTetromino();
+  };
 
-    useInterval(() => {
-        drop();
-    }, dropTime);   
+  useInterval(() => {
+    if (isGameOver) return;
+    dropTetromino(1);
+  }, dropTime);
 
-    return (
-        <StyledTetrisWrapper 
-            role="button" 
-            tabIndex={0} 
-            onKeyDown={e => move(e)}
-            onKeyUp={e => keyUp(e)}
-            >
-            <StyledTetris>
-                <Stage stage={stage}/>
-                <aside>
-                    <div>
-                        {isGameOver ? (<Display gameOver={isGameOver} text="Game Over!" />) : (
-                            <>
-                                <Display text={`Score: ${score}`}/>
-                                <Display text={`Rows: ${rows}`}/>
-                                <Display text={`Level: ${level}`}/>
-                            </>
-                        )}
-                    </div>
-                    <StartButton callback={startGame}/>
-                </aside>
-            </StyledTetris>
-        </StyledTetrisWrapper>
-    );
+  return (
+    <TetrisWrapper
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => keyController(e)}
+      onKeyUp={(e) => handleKeyUp(e)}
+    >
+      <StyledTetris>
+        <Stage stage={stage} />
+        <aside>
+          {isGameOver ? (
+            <Display message={"Game Over!"} />
+          ) : (
+            <>
+              <Display message={`Rows: ${gameStatus.rows}`} />
+              <Display message={`Level: ${gameStatus.level}`} />
+              <Display message={`Scores: ${gameStatus.score}`} />
+            </>
+          )}
+          <StartButton callback={startGame} />
+        </aside>
+      </StyledTetris>
+    </TetrisWrapper>
+  );
 };
 
 export default Tetris;

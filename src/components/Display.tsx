@@ -1,12 +1,11 @@
-import { StyledDisplay } from "./styledComponents/StyledDisplay";
+import { StyledDisplay } from "./styled/StyledDisplay";
 
-export type DisplayProps = {
-    text: string
-    gameOver?: boolean
-}
+type Props = {
+  message: string;
+};
 
-const Display = ({ text, gameOver = false }: DisplayProps) => (
-    <StyledDisplay gameOver={gameOver}>{text}</StyledDisplay>
-);
+const Display = ({ message }: Props) => {
+  return <StyledDisplay>{message}</StyledDisplay>;
+};
 
 export default Display;
