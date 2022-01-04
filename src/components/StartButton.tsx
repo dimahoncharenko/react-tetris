@@ -1,11 +1,9 @@
-import { StyledStartButton } from "./styled/StyledStartButton";
+import { StyledStartButton } from "./styles/StyledStartButton";
 
 type Props = {
   callback: () => void;
 };
 
-const StartButton = ({ callback }: Props) => (
-  <StyledStartButton onClick={callback}>Start Game</StyledStartButton>
+export const StartButton = ({ callback }: Props) => (
+  <StyledStartButton onClick={callback}>Start!</StyledStartButton>
 );
-
-export default StartButton;

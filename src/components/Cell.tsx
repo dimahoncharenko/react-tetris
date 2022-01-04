@@ -1,12 +1,18 @@
-import { StyledCell } from "./styled/StyledCell";
-import { TETROMINOS, TetrominoShapes } from "./gameHelpers";
+import { memo } from "react";
+
+import { TETROMINOS, Shapes } from "./utils/Tetrominos";
+
+// Styled components
+import { StyledCell } from "./styles/StyledCell";
 
 type Props = {
-  type: TetrominoShapes;
+  type: Shapes | 0;
 };
 
-const Cell = ({ type }: Props) => {
-  return <StyledCell type={type} color={TETROMINOS[type].color}></StyledCell>;
-};
+const Cell = ({ type }: Props) => (
+  <>
+    <StyledCell type={type} color={TETROMINOS[type].color} />
+  </>
+);
 
-export default Cell;
+export default memo(Cell);

@@ -1,11 +1,9 @@
-import { StyledDisplay } from "./styled/StyledDisplay";
+import { StyledDisplay } from "./styles/StyledDisplay";
 
 type Props = {
   message: string;
 };
 
-const Display = ({ message }: Props) => {
-  return <StyledDisplay>{message}</StyledDisplay>;
-};
-
-export default Display;
+export const Display = ({ message }: Props) => (
+  <StyledDisplay>{message}</StyledDisplay>
+);

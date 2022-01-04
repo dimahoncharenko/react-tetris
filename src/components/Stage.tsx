@@ -1,22 +1,20 @@
-import { TetrominoShapes } from "./gameHelpers";
-import Cell from "./Cell";
-import { StyledStage } from "./styled/StyledStage";
+import { Stage as TStage } from "./utils/gameUtils";
 
-export type CellType = "clear" | "merged";
-export type Stage = [TetrominoShapes, CellType][][];
+import Cell from "./Cell";
+
+// Styled components
+import { StyledStage } from "./styles/StyledStage";
 
 type Props = {
-  stage: Stage;
+  stage: TStage;
 };
 
-const StageComponent = ({ stage }: Props) => {
+export const Stage = ({ stage }: Props) => {
   return (
-    <StyledStage>
+    <StyledStage className="stage">
       {stage.map((row) =>
         row.map((cell, index) => <Cell key={index} type={cell[0]} />)
       )}
     </StyledStage>
   );
 };
-
-export default StageComponent;

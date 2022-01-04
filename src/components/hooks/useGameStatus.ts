@@ -1,94 +1,120 @@
-import { useEffect, useMemo, useReducer } from "react";
-
-const score_range = [50, 100, 300, 1200, 6000];
+import { useEffect, useReducer } from "react";
 
 export const ACTIONS = {
+  UP_LEVEL: "UP_LEVEL",
   ADD_SCORE: "ADD_SCORE",
-  INCREASE_LEVEL: "INCREASE_LEVEL",
   ADD_ROWS: "ADD_ROWS",
-  RESET_GAME: "RESET_GAME",
+  RESET_LEVEL: "RESET_LEVEL",
+  RESET_ROWS: "RESET_ROWS",
+  RESET_SCORE: "RESET_SCORE",
 } as const;
 
-const initialState = {
+export const initialState = {
   rows: 0,
   level: 1,
   score: 0,
 };
 
-type Action = {
-  type: keyof typeof ACTIONS;
-  payload: number;
-};
+type WithoutPayload = Pick<
+  typeof ACTIONS,
+  | typeof ACTIONS["RESET_LEVEL"]
+  | typeof ACTIONS["RESET_ROWS"]
+  | typeof ACTIONS["RESET_SCORE"]
+  | typeof ACTIONS["UP_LEVEL"]
+>;
 
-export const defaultReducer = (state: typeof initialState, action: Action) => {
+type Action =
+  | {
+      type: typeof ACTIONS["ADD_ROWS"] | typeof ACTIONS["ADD_SCORE"];
+      payload: number;
+    }
+  | {
+      type: keyof WithoutPayload;
+    };
+
+export type Reducer = (
+  state: typeof initialState,
+  action: Action
+) => typeof initialState;
+
+const arrayOfscore = [50, 100, 300, 900, 4500];
+
+export const defaultReducer: Reducer = (state, action) => {
   switch (action.type) {
     case "ADD_ROWS":
       return {
         ...state,
         rows: state.rows + action.payload,
       };
-
     case "ADD_SCORE":
       return {
         ...state,
-        score: state.score + action.payload,
+        score:
+          state.score +
+          arrayOfscore[Math.min(action.payload, arrayOfscore.length - 1)] *
+            state.level,
       };
-
-    case "INCREASE_LEVEL":
+    case "RESET_LEVEL":
       return {
         ...state,
-        level: state.level + action.payload,
-      };
-
-    case "RESET_GAME":
-      return {
         level: 1,
-        rows: 0,
+      };
+    case "UP_LEVEL":
+      return {
+        ...state,
+        level: state.level + 1,
+      };
+    case "RESET_SCORE":
+      return {
+        ...state,
         score: 0,
       };
-
+    case "RESET_ROWS":
+      return {
+        ...state,
+        rows: 0,
+      };
     default:
       return state;
   }
 };
 
 export const useGameStatus = (
-  clearedRows: number,
-  reducer = defaultReducer
+  reducer = defaultReducer,
+  clearedRows: number
 ) => {
   const [gameStatus, dispatch] = useReducer(reducer, initialState);
 
   const addScore = (score: number) =>
-    dispatch({ type: ACTIONS["ADD_SCORE"], payload: score });
+    dispatch({ type: ACTIONS.ADD_SCORE, payload: score });
 
-  const increaseLevel = dispatch.bind(null, {
-    type: ACTIONS["INCREASE_LEVEL"],
-    payload: 1,
-  });
+  const addRows = (rows: number) =>
+    dispatch({ type: ACTIONS.ADD_ROWS, payload: rows });
 
-  const addRows = (rowsCount: number) =>
-    dispatch({ type: ACTIONS["ADD_ROWS"], payload: rowsCount });
+  const upLevel = () => dispatch({ type: ACTIONS.UP_LEVEL });
 
-  const resetGameStatus = dispatch.bind(null, {
-    type: ACTIONS["RESET_GAME"],
-    payload: 0,
-  });
+  const resetLevel = () => dispatch({ type: ACTIONS.RESET_LEVEL });
+  const resetScore = () => dispatch({ type: ACTIONS.RESET_SCORE });
+  const resetRows = () => dispatch({ type: ACTIONS.RESET_ROWS });
 
   useEffect(() => {
     if (clearedRows > 0) {
+      addScore(clearedRows - 1);
       addRows(clearedRows);
-      addScore(score_range[clearedRows - 1] * gameStatus.level);
-      if (gameStatus.rows > 10 * gameStatus.level) {
-        increaseLevel();
+
+      if ((gameStatus.rows + clearedRows) % 10 === 0) {
+        upLevel();
       }
     }
-  }, [clearedRows, gameStatus, increaseLevel]);
+  }, [clearedRows, gameStatus]);
 
   return {
-    gameStatus: useMemo(() => gameStatus, [gameStatus]),
+    gameStatus,
     addRows,
     addScore,
-    increaseLevel,
-    resetGameStatus,
+    upLevel,
+    resetLevel,
+    resetRows,
+    resetScore,
   };
 };
